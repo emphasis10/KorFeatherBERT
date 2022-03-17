@@ -4,10 +4,14 @@ import datasets
 from transformers import AlbertConfig
 from transformers import AlbertForMaskedLM
 from transformers import PreTrainedTokenizerFast
-from transformers import DataCollatorForLanguageModeling
+from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers import Trainer, TrainingArguments
+from transformers.integrations import TensorBoardCallback
+from transformers import pipeline
+from torch.utils.tensorboard import SummaryWriter
 
 data_path = './korean/'
+output_dir = './results_v2'
 data_files = [os.path.join(data_path, path) for path in os.listdir(data_path)]
 
 config = AlbertConfig(
@@ -42,15 +46,18 @@ tokenizer = PreTrainedTokenizerFast(
     mask_token='[MASK]'
 )
 
-data_collator = DataCollatorForLanguageModeling(
+data_collator = DataCollatorForWholeWordMask(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
 )
 
 dataset = datasets.load_from_disk('dataset_v2')
-os.makedirs("results", exist_ok=True)
+os.makedirs(output_dir, exist_ok=True)
+os.makedirs(os.path.join(output_dir, 'logs'), exist_ok=True)
+tb_writer = SummaryWriter(os.path.join(output_dir, 'logs'))
+tb_callback = TensorBoardCallback(tb_writer)
 
 training_args = TrainingArguments(
-    output_dir="./results",
+    output_dir=output_dir,
     overwrite_output_dir=True,
     num_train_epochs=10,
     per_device_train_batch_size=16,
@@ -65,7 +72,17 @@ trainer = Trainer(
     model=model,
     args=training_args,
     train_dataset=dataset,
-    data_collator=data_collator
+    data_collator=data_collator,
+    callbacks=[tb_callback]
 )
 
 trainer.train()
+trainer.save_model(output_dir)
+tb_writer.close()
+
+fill_mask = pipeline(
+    "fill-mask",
+    model=output_dir,
+    tokenizer=tokenizer
+)
+print(fill_mask("나는 [MASK]를 먹었다."))
