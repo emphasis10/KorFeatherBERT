@@ -1,5 +1,6 @@
 import re
 import os
+import multiprocessing
 
 from transformers import AutoTokenizer
 
@@ -14,23 +15,13 @@ def preprocess(line):
     line = line.strip()
     return line
 
-
-data_path = './data/text'  # Original data path from wikiextractor
-corpus_path = './data/trainable_corpus'
-tk_path = './resources/tokenizer'
-
-os.makedirs(corpus_path, exist_ok=True)
-input_files = [path for path in os.listdir(data_path)]
-
-tokenizer = AutoTokenizer.from_pretrained(tk_path)
-
-for i in input_files:
-    path = os.path.join(data_path, i)
+def process_file(tag_name):
+    path = os.path.join(data_path, tag_name)
     files = os.listdir(path)
-    os.makedirs(os.path.join(corpus_path, i), exist_ok=True)
+    os.makedirs(os.path.join(corpus_path, tag_name), exist_ok=True)
     for j in files:
-        with open(os.path.join(data_path, i, j)) as fr:
-            with open(os.path.join(corpus_path, i, j), 'w') as fw:
+        with open(os.path.join(data_path, tag_name, j)) as fr:
+            with open(os.path.join(corpus_path, tag_name, j), 'w') as fw:
                 paragraphs = []
                 paragraph = ""
                 for line in fr.readlines():
@@ -68,6 +59,20 @@ for i in input_files:
                         new_texts.append(tmp.rstrip())
 
                     fw.write('\n'.join(new_texts) + '\n')
+
+data_path = './data/text'  # Original data path from wikiextractor
+corpus_path = './data/trainable_corpus'
+tk_path = './resources/tokenizer'
+
+os.makedirs(corpus_path, exist_ok=True)
+input_files = [path for path in os.listdir(data_path)]
+
+tokenizer = AutoTokenizer.from_pretrained(tk_path)
+
+pool = multiprocessing.Pool(processes=8)
+pool.map(process_file, input_files)
+pool.close()
+pool.join()
 
 os.chdir(corpus_path)
 for i in os.listdir():
