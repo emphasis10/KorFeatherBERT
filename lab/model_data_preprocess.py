@@ -1,7 +1,7 @@
 import re
 import os
 
-from transformers import PreTrainedTokenizerFast
+from transformers import AutoTokenizer
 
 
 def preprocess(line):
@@ -10,26 +10,19 @@ def preprocess(line):
     line = re.sub('<.*?>', '', line)
     line = re.sub('\(.*?\)', '', line)
     hangul = re.compile('[^ ,.!?0-9a-zA-Zㄱ-ㅎ가-힣]')
-    line = hangul.sub(line)
+    line = hangul.sub('', line)
     line = line.strip()
     return line
 
 
 data_path = './data/text'  # Original data path from wikiextractor
 corpus_path = './data/trainable_corpus'
+tk_path = './resources/tokenizer'
 
 os.makedirs(corpus_path, exist_ok=True)
 input_files = [path for path in os.listdir(data_path)]
 
-tokenizer = PreTrainedTokenizerFast(
-    tokenizer_file='tk/tokenizer.json',
-    model_max_length=512,
-    unk_token='[UNK]',
-    sep_token='[SEP]',
-    pad_token='[PAD]',
-    cls_token='[CLS]',
-    mask_token='[MASK]'
-)
+tokenizer = AutoTokenizer.from_pretrained(tk_path)
 
 for i in input_files:
     path = os.path.join(data_path, i)
