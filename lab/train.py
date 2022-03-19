@@ -1,5 +1,7 @@
 import os
+import json
 import datasets
+import argparse
 
 from transformers import AlbertConfig
 from transformers import AlbertForMaskedLM
@@ -10,25 +12,30 @@ from transformers import pipeline
 from transformers import AutoTokenizer
 from torch.utils.tensorboard import SummaryWriter
 
-data_path = 'data/trainable_corpus'
-output_dir = 'results/v2'
-tk_path = 'resources/tokenizer'
-dataset_path = 'data/dataset_v1'
-data_files = [os.path.join(data_path, path) for path in os.listdir(data_path)]
 
-config = AlbertConfig(
-    vocab_size=10000,
-    embedding_size=128,
-    hidden_size=768,
-    num_hidden_layers=3,
+parser = argparse.ArgumentParser()
+parser.add_argument('config')
+args = parser.parse_args()
+with open(args.config) as f:
+    config = json.load(f)
+
+tk_path = config['path']['tokenizer']
+dataset_path = config['path']['data']
+result_path = config['path']['result']
+
+model_config = AlbertConfig(
+    vocab_size=config['model']['vocab_size'],
+    embedding_size=config['model']['embedding_size'],
+    hidden_size=config['model']['hidden_size'],
+    num_hidden_layers=config['model']['num_hidden_layers'],
     num_hidden_groups=1,
-    num_attention_heads=12,
-    intermediate_size=768*4,
+    num_attention_heads=config['model']['num_attention_heads'],
+    intermediate_size=config['model']['intermediate_size'],
     inner_group_num=1,
     hidden_act='gelu_new',
     hidden_dropout_prob=0,
     attention_probs_dropout_prob=0,
-    max_position_embeddings=512,
+    max_position_embeddings=config['model']['max_position_embeddings'],
     type_vocab_size=2,
     initializer_range=0.02,
     layer_norm_eps=1e-12,
@@ -36,7 +43,7 @@ config = AlbertConfig(
     position_embedding_type='absolute'
 )
 
-model = AlbertForMaskedLM(config=config)
+model = AlbertForMaskedLM(config=model_config)
 tokenizer = AutoTokenizer.from_pretrained(tk_path)
 
 data_collator = DataCollatorForWholeWordMask(
@@ -44,21 +51,21 @@ data_collator = DataCollatorForWholeWordMask(
 )
 
 dataset = datasets.load_from_disk(dataset_path)
-os.makedirs(output_dir, exist_ok=True)
-os.makedirs(os.path.join(output_dir, 'logs'), exist_ok=True)
-tb_writer = SummaryWriter(os.path.join(output_dir, 'logs'))
+os.makedirs(result_path, exist_ok=True)
+os.makedirs(os.path.join(result_path, 'logs'), exist_ok=True)
+tb_writer = SummaryWriter(os.path.join(result_path, 'logs'))
 tb_callback = TensorBoardCallback(tb_writer)
 
 training_args = TrainingArguments(
-    output_dir=output_dir,
+    output_dir=result_path,
     overwrite_output_dir=True,
-    num_train_epochs=10,
-    per_device_train_batch_size=16,
-    save_steps=10000,
+    num_train_epochs=config['train']['num_train_epochs'],
+    per_device_train_batch_size=config['train']['per_device_train_batch_size'],
+    save_steps=config['train']['save_steps'],
     save_total_limit=2,
     prediction_loss_only=True,
-    fp16=True,
-    gradient_accumulation_steps=8,
+    fp16=config['train']['fp16'],
+    gradient_accumulation_steps=config['train']['gradient_accumulation_steps'],
 )
 
 trainer = Trainer(
@@ -70,12 +77,12 @@ trainer = Trainer(
 )
 
 trainer.train()
-trainer.save_model(output_dir)
+trainer.save_model(result_path)
 tb_writer.close()
 
 fill_mask = pipeline(
     "fill-mask",
-    model=output_dir,
+    model=result_path,
     tokenizer=tokenizer
 )
 print(fill_mask("나는 [MASK]를 먹었다."))
