@@ -8,7 +8,7 @@ def encode(examples):
     return tokenizer(examples['text'], truncation=True, padding='max_length', max_length=512)
 
 data_path = 'data/trainable_corpus'
-dataset_path = 'data/dataset_v1'
+dataset_path = 'data/dataset/v1'
 tk_path = 'resources/tokenizer'
 
 data_files = [os.path.join(data_path, path) for path in os.listdir(data_path) if not path.startswith('.')]
