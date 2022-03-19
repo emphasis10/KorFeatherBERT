@@ -64,7 +64,7 @@ for i in input_files:
                             tmp = ""
                         tmp += text + '. '
 
-                    if tmp:
+                    if tmp and len(tmp) > 100:
                         new_texts.append(tmp.rstrip())
 
                     fw.write('\n'.join(new_texts) + '\n')
