@@ -39,12 +39,15 @@ for i in input_files:
 
                     if '</doc>' in line:
                         paragraphs.append(paragraph)
+                        paragraph = ""
                         continue
 
                     line = preprocess(line)
                     if not line:
                         continue
 
+                    if line[-1] != '.':
+                        line += '.'
                     paragraph += line
 
                 for paragraph in paragraphs:
@@ -68,6 +71,8 @@ for i in input_files:
 
 os.chdir(corpus_path)
 for i in os.listdir():
+    if len(i) > 2:
+        continue
     os.chdir(i)
     os.system('cat wiki_* > merged_' + i)
     os.system('mv merged_' + i + ' ../')

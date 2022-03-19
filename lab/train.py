@@ -3,15 +3,17 @@ import datasets
 
 from transformers import AlbertConfig
 from transformers import AlbertForMaskedLM
-from transformers import PreTrainedTokenizerFast
 from transformers import DataCollatorForLanguageModeling, DataCollatorForWholeWordMask
 from transformers import Trainer, TrainingArguments
 from transformers.integrations import TensorBoardCallback
 from transformers import pipeline
+from transformers import AutoTokenizer
 from torch.utils.tensorboard import SummaryWriter
 
-data_path = './korean/'
-output_dir = './results_v2'
+data_path = 'data/trainable_corpus'
+output_dir = 'results/v2'
+tk_path = 'resources/tokenizer'
+dataset_path = 'data/dataset_v1'
 data_files = [os.path.join(data_path, path) for path in os.listdir(data_path)]
 
 config = AlbertConfig(
@@ -35,22 +37,13 @@ config = AlbertConfig(
 )
 
 model = AlbertForMaskedLM(config=config)
-
-tokenizer = PreTrainedTokenizerFast(
-    tokenizer_file='tk/tokenizer.json',
-    model_max_length=512,
-    unk_token='[UNK]',
-    sep_token='[SEP]',
-    pad_token='[PAD]',
-    cls_token='[CLS]',
-    mask_token='[MASK]'
-)
+tokenizer = AutoTokenizer.from_pretrained(tk_path)
 
 data_collator = DataCollatorForWholeWordMask(
     tokenizer=tokenizer, mlm=True, mlm_probability=0.15
 )
 
-dataset = datasets.load_from_disk('dataset_v2')
+dataset = datasets.load_from_disk(dataset_path)
 os.makedirs(output_dir, exist_ok=True)
 os.makedirs(os.path.join(output_dir, 'logs'), exist_ok=True)
 tb_writer = SummaryWriter(os.path.join(output_dir, 'logs'))

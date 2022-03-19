@@ -2,8 +2,8 @@ import re
 import os
 import mecab
 
-raw_data_dir = 'text'
-tk_data_dir = 'preprocessed'
+raw_data_dir = 'data/text'
+tk_data_dir = 'data/tk_data'
 m = mecab.MeCab()
 os.makedirs(tk_data_dir, exist_ok=True)
 
@@ -12,7 +12,7 @@ for i in os.listdir(raw_data_dir):
     for j in os.listdir(os.path.join(raw_data_dir, i)):
         with open(os.path.join(raw_data_dir, i, j), 'r') as f:
             fw = open(os.path.join(tk_data_dir, i, j), 'w')
-            for line in f.readlines():  
+            for line in f.readlines():
                 if not line:
                     continue
                 line = line.replace('\n\n', '\n').replace('&lt;', '').replace('&gt;', '')
@@ -25,6 +25,8 @@ for i in os.listdir(raw_data_dir):
         
 os.chdir(tk_data_dir)
 for i in os.listdir():
+    if len(i) > 2:
+        continue
     os.chdir(i)
     os.system('cat wiki_* > merged_' + i)
     os.system('mv merged_'+i+' ../')
