@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 
 def preprocess(line):
     line = line.strip()
-    line = line.replace('\n\n', '\n').replace('&lt;', '').replace('&gt;', '')
+    line = line.replace('\n\n', '\n').replace('&lt;', '').replace('&gt;', '').replace('  ', ' ')
     line = re.sub('<.*?>', '', line)
     line = re.sub('\(.*?\)', '', line)
     hangul = re.compile('[^ ,.!?0-9a-zA-Zㄱ-ㅎ가-힣]')
@@ -58,7 +58,10 @@ def process_file(tag_name):
                     if tmp and len(tmp) > 100:
                         new_texts.append(tmp.rstrip())
 
-                    fw.write('\n'.join(new_texts) + '\n')
+                    for line in new_texts:
+                        line = line.replace('\n', '')
+                        line += '\n'
+                        fw.write(line)
 
 data_path = './data/text'  # Original data path from wikiextractor
 corpus_path = './data/trainable_corpus'
