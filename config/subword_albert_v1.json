@@ -1,0 +1,27 @@
+{
+    "model": {
+        "vocab_size": 12367,
+        "embedding_size": 128,
+        "hidden_size": 512,
+        "num_hidden_layers": 3,
+        "num_attention_heads": 8,
+        "intermediate_size": 1024,
+        "max_position_embeddings": 512
+    },
+    "train": {
+        "num_train_epochs": 200,
+        "per_device_train_batch_size": 32,
+        "save_steps": 10000,
+        "fp16": false,
+        "gradient_accumulation_steps": 16,
+        "morpheme": false,
+        "subchar": true
+    },
+    "path": {
+        "raw_data": "lab/data/text",
+        "tk_data": "data/tk_data",
+        "model_data": "data/model_data",
+        "tokenizer": "resources/subword_tk",
+        "result": "results/subword_albert_v1"
+    }
+}
